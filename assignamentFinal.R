@@ -1,6 +1,6 @@
 #Libraries
 #processing
-library(dplyr);library(data.table)
+library(dplyr);library(data.table);library(plyr)
 library(ggplot2);library(cowplot);library(tidyr);
 library(lattice);library(caret);library(corrplot);
 
@@ -32,14 +32,36 @@ na_count2 <- data.frame(na_count2)
 removeCol2 <- c("X","user_name")
 training <- training[,-which(names(training) %in% removeCol2)]
 test <- test[,-which(names(test) %in% removeCol2)]
+
+na_count2 <-sapply(training, function(x) sum(length(which(is.na(x)))))
+na_count2 <- data.frame(na_count2)
 ######################################
 
-str(training)
-training$classe <-as.numeric( as.factor(training$classe ))
-training$new_window <- as.numeric( as.factor(training$new_window))
+
+unique(training$new_window)
+training$new_window <- revalue(training$new_window,c("yes" = 1))
+training$new_window <- revalue(training$new_window, c("no"=0))
 
 
-training <- training[,-which(names(training) %in% 'cvtd_timestamp')]
+test$new_window <- revalue(test$new_window, c("no"=0))
+training$new_window<- as.numeric(training$new_window)
+test$new_window <- as.numeric(test$new_window)
+str(test)
+
+
+test$classe <-as.numeric( as.factor(training$classe ))
+test$classe <-as.numeric( as.factor(test$classe ))
+
+trainingdate <- training[,-3]
+
+mat <- data.frame(formatC(cor(trainingdate, method ="pearson"), format="f", digits=1))
+
+
+
+
+lowCor <- mat%>% {which(mat$classe > 0)}
+removeCol <- c(rownames(na_count)[removeCol])
+
 
 corr2 <- function(data,
                   method = "pearson",
@@ -48,8 +70,8 @@ corr2 <- function(data,
                   diag = FALSE,
                   type = "upper",
                   tl.srt = 90,
-                  number.font = 1,
-                  number.cex = 1,
+                  number.font = 0.5,
+                  number.cex = 0.5,
                   mar = c(0, 0, 0, 0)) {
   
 
@@ -78,7 +100,8 @@ corr2 <- function(data,
            method = "color", col= col(200), number.font = number.font,
            mar = mar, number.cex = number.cex,
            type = type, order = order,
-           addCoef.col = "black", # add correlation coefficient
+           addCoef.col = "black",
+           # add correlation coefficient
            tl.col = "black", tl.srt = tl.srt, # Rotation of text labels,
            # combine with significance level
            p.mat = p.mat, sig.level = sig.level, insig = "blank",
@@ -89,16 +112,17 @@ corr2 <- function(data,
 
 
 corr2(
-  data = training,
+  data = trainingdate,
   method= "pearson",
   sig.level = 0.05,
   order = "original",
   diag = FALSE,
   type = "upper",
-  tl.srt = 75
+  tl.srt = 90
   
 )
+trainingdate <- trainingdate[,-c(1,2,3,30 )]
 
-str(training)
 
-
+mat <- cor(trainingdate, method ="pearson")
+mat <- formatC(mat, format="f", digits = 2)
