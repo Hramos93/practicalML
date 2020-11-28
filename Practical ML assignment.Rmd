@@ -2,7 +2,7 @@
 title: "Practial ML Assignment"
 author: "Hramos"
 date: "28 de noviembre de 2020"
-output: html_document
+output: md_document
 ---
 
 ```{r setup, include=FALSE}
