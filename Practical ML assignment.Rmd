@@ -1,31 +1,56 @@
-#Libraries
-#processing
-library(dplyr);library(data.table);library(plyr)
+---
+title: "Practial ML Assignment"
+author: "Hramos"
+date: "28 de noviembre de 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Librararies
+####Processing
+```{r echo = TRUE, message=FALSE, warning=FALSE}
+library(dplyr);library(data.table);library(plyr);library(corrplot);
+```
+####Visualization
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 library(ggplot2);library(cowplot);library(tidyr);library(Hmisc);
 library(hrbrthemes);library(viridis)
+```
+####Machine Learning
+```{r echo = TRUE, message=FALSE, warning=FALSE}
+library(caret);library(rpart);library(rpart.plot);library(randomForest)
+```
 
-library(caret);library(corrplot);
-library(rpart);library(rpart.plot);library(randomForest)
 
+### Data Analysis
+To Begin, we have to load data
 
-#LOAD DATA
+```{r echo = TRUE, message=FALSE, warning=FALSE}
+
 urlTraining <- 'https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv'
 urlTest <- 'https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv'
 
 training <- read.csv(urlTraining)
 test <- read.csv(urlTest)
+```
 
+We going to see which are values in columns  
 
-#DATA PROCESSING 
-
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 str(training)
+```
 
-#DATA CLEANING
-
-#NA
+We have seen that there is several columns whit empty values, then going to replace to NA 
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 training[training==""] <- NA
 test[test==""] <- NA
+```
 
+This column with NA are very long, so going to DROP 
+
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 #Drop column with NA
 na_count <-sapply(training, function(x) sum(length(which(is.na(x)))))
 na_count <- data.frame(na_count)
@@ -39,7 +64,10 @@ test <- test[,-which(names(test) %in% removeCol)]
 removeCol2 <- c("X","user_name","cvtd_timestamp")
 training <- training[,-which(names(training) %in% removeCol2)]
 test <- test[,-which(names(test) %in% removeCol2)]
+```
+new_window is a column binary(yes and not), so going to transform this column in num with values 1 and 0
 
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 
 #Convert Character to number to new_window
 unique(training$new_window)
@@ -48,21 +76,32 @@ training$new_window <- revalue(training$new_window, c("no"=0))
 test$new_window <- revalue(test$new_window, c("no"=0))
 training$new_window<- as.numeric(training$new_window)
 test$new_window <- as.numeric(test$new_window)
+```
 
-
+####Compute Correlation values
+Going to compute correlation values to see which are relevant column
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 #COMPUTE CORRELATION
 dataC <- training
 dataC$classe <- as.numeric(as.factor(dataC$classe))
 
-
 mat <- data.frame(formatC(cor(dataC , method ="pearson"), format="f", digits=1))
 mat[] <- lapply(mat, as.numeric)
+```
 
+Here going to remove column without relation with column classe
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 #Drop column without Correlation
 lowCor <- mat%>% {which(mat$classe == 0.0)}
 removelowCor <- c(rownames(mat)[lowCor])
 
 dataC <- dataC[,-which(names(dataC) %in% removelowCor)]
+
+
+```
+
+###Visualization of Correlations
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 
 corr2 <- function(data,
                   method = "pearson",
@@ -111,7 +150,11 @@ corr2 <- function(data,
   )
 }
 
+```
 
+
+```{r echo = TRUE, message=FALSE, warning=FALSE}
+#COMPUTE CORRELATION
 corr2(
   data = dataC,
   method= "pearson",
@@ -122,7 +165,10 @@ corr2(
   tl.srt = 90
   
 )
+```
 
+relation of the values diplayes through boxplot boxes
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 
 par(mfrow=c(2,2))
 boxplot(magnet_belt_y~classe,
@@ -159,45 +205,53 @@ boxplot(accel_arm_x~classe,
         col="orange",
         border="brown"
 )
+```
 
-
-par(mfrow=c(1,1))
-
+Clean principal dataset
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 #Remove Col from principal dataset
 training <- training[,-which(names(training) %in% removelowCor)]
 test <- test[,-which(names(test) %in% removelowCor)]
+```
 
-
-######MODELS
-
+###Models
+####rpart
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 inTrain <- createDataPartition(y=training$classe, p=0.75, list=FALSE)
 trainM <- training[inTrain, ] 
 testM <- training[-inTrain, ]
 
-
 # Fit model
 modFitDT <- rpart(classe ~ ., data=trainM, method="class")
-
 # Perform prediction
 predictDT <- predict(modFitDT, testM, type = "class")
+```
 
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 # Plot result
+par(mfrow=c(1,1))
 rpart.plot(modFitDT, main="Classification Tree", extra=102, under=TRUE, faclen=0)
 testM$classe <- as.factor(testM$classe)
 confusionMatrix(predictDT, testM$classe)
-
-#Random Forest
-# Fit model
-
+```
+####random forest
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 RF_modfit <- train(classe ~ ., data = trainM, method = "rf", ntree = 100)
 RF_prediction <- predict(RF_modfit, testM)
+```
+
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 RF_pred_conf <- confusionMatrix(RF_prediction, testM$classe)
 RF_pred_conf
 
+```
 
-RF_pred_conf$overall
 
+```{r echo = TRUE, message=FALSE, warning=FALSE}
 #FINAL TEST
-
 Final_RF_prediction <- predict(RF_modfit, test )
 Final_RF_prediction
+```
+
+
+
