@@ -246,13 +246,12 @@ RF_pred_conf
 
 ```
 
-###Result
-The confusion matrices show, that the Random Forest algorithm performens better than decision trees. The accuracy for the Random Forest model was  0.9865    (95% CI:(0.9829, 0.9896)) compared to 0.6654  (95% CI:  (0.652, 0.6786))  for rpart. The random Forest model is choosen.
-
 
 ```{r echo = TRUE, message=FALSE, warning=FALSE}
 #FINAL TEST
 Final_RF_prediction <- predict(RF_modfit, test )
 Final_RF_prediction
 ```
+
+
 
