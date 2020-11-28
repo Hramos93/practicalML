@@ -199,3 +199,8 @@ RF_pred_conf
 
 
 RF_pred_conf$overall
+
+#FINAL TEST
+
+Final_RF_prediction <- predict(RF_modfit, test )
+Final_RF_prediction
